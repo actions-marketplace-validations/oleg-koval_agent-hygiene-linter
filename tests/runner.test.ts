@@ -1,5 +1,9 @@
+import { resolve } from "node:path";
+import { tmpdir } from "node:os";
 import { describe, it, expect } from "vitest";
 import { parsePlaybookMarkdown, runPlaybook } from "../src/index.js";
+
+const appRoot = resolve(tmpdir(), "ai-refactor-playbook-runner", "app");
 
 const playbookMarkdown = `# Refactor api client
 
@@ -30,7 +34,7 @@ describe("runPlaybook", () => {
 
     const calls: Array<string> = [];
     const firstRun = await runPlaybook(playbook, {
-      cwd: "/Users/olegkoval/projects/app",
+      cwd: appRoot,
       statePath: "/tmp/playbook-state.json",
       variables: { repo_root: "/Users/olegkoval/projects/app" },
       executor: async (command) => {
@@ -53,7 +57,7 @@ describe("runPlaybook", () => {
 
     const resumedCalls: Array<string> = [];
     const resumed = await runPlaybook(playbook, {
-      cwd: "/Users/olegkoval/projects/app",
+      cwd: appRoot,
       statePath: "/tmp/playbook-state.json",
       resume: true,
       variables: { repo_root: "/Users/olegkoval/projects/app" },
@@ -73,7 +77,7 @@ describe("runPlaybook", () => {
     });
 
     const result = await runPlaybook(playbook, {
-      cwd: "/Users/olegkoval/projects/app",
+      cwd: appRoot,
       dryRun: true,
       variables: { repo_root: "/Users/olegkoval/projects/app" },
       executor: async () => {
@@ -108,7 +112,7 @@ Make the API client deterministic.
     });
 
     const result = await runPlaybook(playbook, {
-      cwd: "/Users/olegkoval/projects/app",
+      cwd: appRoot,
       variables: { repo_root: "/Users/olegkoval/projects/app" },
       executor: async () =>
         new Promise(() => {
