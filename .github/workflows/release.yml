@@ -36,4 +36,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           LEFTHOOK: 0
-        run: npm run semantic-release
+        run: git config --local core.hooksPath /dev/null && npm run semantic-release
