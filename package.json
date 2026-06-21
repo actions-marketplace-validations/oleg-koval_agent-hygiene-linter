@@ -18,6 +18,10 @@
   "bugs": {
     "url": "https://github.com/oleg-koval/agent-hygiene-linter/issues"
   },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "keywords": [
     "hygiene",
     "lint",
