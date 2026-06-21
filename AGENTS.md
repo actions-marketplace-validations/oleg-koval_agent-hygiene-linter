@@ -39,7 +39,7 @@ npx lefthook install
 - Tests live in `tests/`, mirror `src/` layout, use Vitest. Prefer integration tests
   that exercise the public API end-to-end. Unit-test only pure functions with
   non-trivial branching — do not mock internal collaborators to hit coverage targets.
-- Public API exports go through `src/index.ts`. Internal types in `src/types.ts`.
+- Public API exports go through `src/index.ts`. Internal types in `src/hygiene-types.ts`.
 
 ## Don't
 

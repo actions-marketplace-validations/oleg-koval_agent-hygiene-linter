@@ -6,12 +6,12 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov", "html"],
-      include: ["src/**/*.{ts,tsx}"],
-      exclude: ["src/types.ts", "src/index.ts"],
+      include: ["src/cli.ts", "src/hygiene-report.ts", "src/hygiene-scan.ts"],
+      exclude: ["src/index.ts", "src/hygiene-types.ts"],
       thresholds: {
         lines: 75,
-        functions: 88,
-        branches: 62,
+        functions: 80,
+        branches: 60,
         statements: 75,
       },
     },

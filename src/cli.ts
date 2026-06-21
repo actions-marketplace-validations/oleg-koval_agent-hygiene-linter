@@ -1,146 +1,97 @@
 #!/usr/bin/env node
+import { writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadPlaybookFile } from "./load.js";
-import { startServer } from "./server.js";
-import { runPlaybook } from "./runner.js";
-import type { CliArgs } from "./types.js";
+import {
+  renderJsonReport,
+  renderMarkdownReport,
+  renderTextReport,
+} from "./hygiene-report.js";
+import { scanRepository } from "./hygiene-scan.js";
+import type { CliOptions } from "./hygiene-types.js";
 
-function parsePort(value: string | undefined, fallback: number): number {
+function parseNumber(value: string | undefined, fallback: number): number {
   if (value === undefined) {
     return fallback;
   }
 
   const parsed = Number.parseInt(value, 10);
   if (Number.isNaN(parsed)) {
-    throw new Error(`Invalid port: ${value}`);
+    throw new Error(`Invalid number: ${value}`);
   }
 
   return parsed;
 }
 
-export function parseCliArgs(argv: string[]): CliArgs {
+export function parseCliArgs(argv: string[]): CliOptions {
   const args = [...argv];
-  const command = (args[0] ?? "run") as "serve" | "run";
-  let host = "127.0.0.1";
-  let port = 8787;
-  let playbookPath: string | undefined;
-  let dryRun = false;
-  let resume = false;
-  let statePath: string | undefined;
-  let cwd: string | undefined;
-  let root: string | undefined;
+  let repoPath = process.cwd();
+  let format: CliOptions["format"] = "text";
+  let outputPath: string | undefined;
+  let minScore = 75;
 
-  if (command === "run") {
-    playbookPath = args[1];
-  }
-
-  for (let index = 1; index < args.length; index += 1) {
+  for (let index = 0; index < args.length; index += 1) {
     const token = args[index];
     if (token === undefined) {
       continue;
     }
 
-    switch (token) {
-      case "--host":
-        host = args[index + 1] ?? host;
-        index += 1;
-        break;
-      case "--port":
-        port = parsePort(args[index + 1], port);
-        index += 1;
-        break;
-      case "--playbook":
-      case "--playbook-path":
-        playbookPath = args[index + 1];
-        index += 1;
-        break;
-      case "--cwd":
-        cwd = args[index + 1];
-        index += 1;
-        break;
-      case "--state-file":
-        statePath = args[index + 1];
-        index += 1;
-        break;
-      case "--root":
-        root = args[index + 1];
-        index += 1;
-        break;
-      case "--dry-run":
-        dryRun = true;
-        break;
-      case "--resume":
-        resume = true;
-        break;
-      default:
-        break;
+    if (token === "--format") {
+      const next = args[index + 1];
+      if (next === "json" || next === "markdown" || next === "text") {
+        format = next;
+      }
+      index += 1;
+      continue;
+    }
+
+    if (token === "--output") {
+      outputPath = args[index + 1];
+      index += 1;
+      continue;
+    }
+
+    if (token === "--min-score") {
+      minScore = parseNumber(args[index + 1], minScore);
+      index += 1;
+      continue;
+    }
+
+    if (!token.startsWith("--")) {
+      repoPath = token;
     }
   }
 
-  const parsed: CliArgs = {
-    command,
-    host,
-    port,
-    dryRun,
-    resume,
-  };
-
-  if (playbookPath !== undefined) {
-    parsed.playbookPath = playbookPath;
+  const parsed: CliOptions = { repoPath, format, minScore };
+  if (outputPath !== undefined) {
+    parsed.outputPath = outputPath;
   }
-  if (statePath !== undefined) {
-    parsed.statePath = statePath;
-  }
-  if (cwd !== undefined) {
-    parsed.cwd = cwd;
-  }
-  if (root !== undefined) {
-    parsed.root = root;
-  }
-
   return parsed;
 }
 
 async function main(): Promise<void> {
   const args = parseCliArgs(process.argv.slice(2));
-  const workspaceRoot = args.root ?? process.cwd();
+  const repoPath = resolve(process.cwd(), args.repoPath);
+  const report = await scanRepository(repoPath);
 
-  if (args.command === "serve") {
-    const server = await startServer({
-      host: args.host,
-      port: args.port,
-      workspaceRoot,
-    });
+  const output =
+    args.format === "json"
+      ? renderJsonReport(report)
+      : args.format === "markdown"
+        ? renderMarkdownReport(report)
+        : renderTextReport(report);
 
-    console.log(
-      `AI Refactor Playbook Runner listening on http://${args.host}:${String(server.port)}`,
-    );
-    console.log(
-      "Bind to 0.0.0.0 and use your Tailscale IP or MagicDNS name from mobile.",
-    );
-    return;
+  if (args.outputPath !== undefined) {
+    const resolvedOutput = resolve(dirname(repoPath), args.outputPath);
+    await writeFile(resolvedOutput, output, "utf8");
+    console.log(`Saved report to ${resolvedOutput}`);
+  } else {
+    process.stdout.write(output);
   }
 
-  if (args.playbookPath === undefined) {
-    throw new Error("Provide a playbook path");
+  if (report.score < args.minScore) {
+    process.exitCode = 1;
   }
-
-  const resolvedPath = resolve(workspaceRoot, args.playbookPath);
-  const playbook = await loadPlaybookFile(resolvedPath);
-  const runOptions: Parameters<typeof runPlaybook>[1] = {
-    cwd: args.cwd ?? dirname(resolvedPath),
-    dryRun: args.dryRun,
-    resume: args.resume,
-  };
-
-  if (args.statePath !== undefined) {
-    runOptions.statePath = args.statePath;
-  }
-
-  const result = await runPlaybook(playbook, runOptions);
-
-  console.log(JSON.stringify(result, null, 2));
 }
 
 const entryPoint =

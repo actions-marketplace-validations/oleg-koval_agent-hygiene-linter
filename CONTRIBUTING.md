@@ -1,6 +1,6 @@
 # Contributing
 
-This repo is an MVP. Keep changes small and focused on the core refactor runner.
+This repo is an MVP. Keep changes small and focused on the hygiene linter core.
 
 ## Before you open a PR
 
@@ -18,6 +18,6 @@ This repo is an MVP. Keep changes small and focused on the core refactor runner.
 
 ## What this project is not
 
-- Not a general workflow engine
+- Not a full CI system
 - Not a deployment orchestrator
 - Not a monorepo-wide automation platform

@@ -1,117 +1,123 @@
 <p align="center">
-  <a href="./.github/workflows/ci.yml"><img src="https://github.com/oleg-koval/ai-refactor-playbook-runner/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/oleg-koval/ai-refactor-playbook-runner/releases"><img src="https://img.shields.io/github/v/release/oleg-koval/ai-refactor-playbook-runner" alt="GitHub release"></a>
+  <a href="./.github/workflows/ci.yml"><img src="https://github.com/oleg-koval/agent-hygiene-linter/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/oleg-koval/agent-hygiene-linter/releases"><img src="https://img.shields.io/github/v/release/oleg-koval/agent-hygiene-linter" alt="GitHub release"></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT license"></a>
+  <a href="https://www.npmjs.com/package/agent-hygiene-linter"><img src="https://img.shields.io/npm/v/agent-hygiene-linter" alt="npm version"></a>
 </p>
 
 <p align="center">
-  <img src="./logo.svg" width="120" height="120" alt="AI Refactor Playbook Runner logo">
+  <img src="./logo.svg" width="120" height="120" alt="Agent Hygiene Linter logo">
 </p>
 
-<h1 align="center">ai-refactor-playbook-runner</h1>
+<h1 align="center">agent-hygiene-linter</h1>
 
 <p align="center">
-  Markdown-driven refactor playbooks for repeatable cleanup work<br>
-  <strong>Dry-run, resume, retries, and a mobile-friendly local UI</strong>
+  Scan any repo and get a hygiene score in seconds<br>
+  <strong>README · AGENTS.md · docs · changelog · scripts · commit style — all in one pass</strong>
 </p>
 
 ---
 
-## Features
+## What it does
 
-- Parses reusable playbooks from markdown
-- Supports inherited templates and clean merge behavior
-- Expands `{{placeholder}}` values in step names, commands, and cwd
-- Runs sequential steps with retries and per-step timeout reporting
-- Supports `--dry-run` and `--resume`
-- Ships a local browser UI and a Tailscale-friendly server bind
+`agent-hygiene-linter` runs a quick structural audit of any repository and emits a score from 0–100 along with categorised findings: **good**, **warning**, or **fix now**.
 
-## Installation
+It checks:
 
-```bash
-npm ci
-npm run build
-```
+| Finding code                                                     | What it looks for                                  |
+| ---------------------------------------------------------------- | -------------------------------------------------- |
+| `readme-present` / `readme-missing`                              | Top-level `README.md`                              |
+| `agent-doc-present` / `agent-doc-missing`                        | `AGENTS.md` or `CLAUDE.md`                         |
+| `docs-shape-present` / `docs-shape-missing`                      | At least one `.md` file under `docs/`              |
+| `changelog-present` / `changelog-missing`                        | `CHANGELOG.md` or `docs/changelog.md`              |
+| `package-scripts-good` / `package-scripts-missing`               | Standard `build`, `test`, `lint`, `ci` npm scripts |
+| `commit-style-good` / `commit-style-mixed` / `commit-style-weak` | Conventional Commits ratio over last 25 commits    |
+| `entrypoint-present` / `entrypoint-missing`                      | `src/index.ts`, `index.ts`, or `main.ts`           |
 
-## Quick start
+**Scoring:** each `fix now` finding costs 18 points; each `warning` costs 8 points. Minimum score is 0.
 
-Run the sample playbook:
-
-```bash
-node dist/cli.js run examples/demo.md
-```
-
-Preview it without executing commands:
+## Install
 
 ```bash
-node dist/cli.js run examples/demo.md --dry-run
+npm install -g agent-hygiene-linter
 ```
 
-Start the local UI:
+Or run without installing:
 
 ```bash
-node dist/cli.js serve --host 0.0.0.0 --port 8787
+npx agent-hygiene-linter <path>
 ```
 
-Open it from mobile on Tailscale with your machine's Tailscale IP or MagicDNS hostname.
+## Usage
 
-## Commands
+```bash
+# Scan the current directory (text output)
+agent-hygiene-linter .
 
-- `node dist/cli.js run <playbook.md>` - run a playbook
-- `node dist/cli.js run <playbook.md> --dry-run` - render the plan without executing commands
-- `node dist/cli.js run <playbook.md> --resume` - resume from the last successful step
-- `node dist/cli.js serve --host 0.0.0.0 --port 8787` - open the browser UI
+# Scan a specific repo
+agent-hygiene-linter /path/to/your/repo
 
-## Playbook format
+# Markdown report
+agent-hygiene-linter . --format markdown
 
-A playbook is markdown with these sections:
+# JSON report (for CI pipelines / dashboards)
+agent-hygiene-linter . --format json
 
-- `# Title`
-- `## Objective`
-- `## Preconditions`
-- `## Inherited Template`
-- `## Variables`
-- `## Steps`
-- `## Validation`
-- `## Rollback`
-- `## Success Criteria`
-- `## Kill Criteria`
+# Save report to a file
+agent-hygiene-linter . --format markdown --output hygiene-report.md
 
-Step fields:
+# Fail with exit code 1 if score is below threshold (default: 75)
+agent-hygiene-linter . --min-score 80
+```
 
-- `name`
-- `command`
-- `cwd`
-- `retries`
-- `timeout_seconds`
+## Example output
 
-Variables use `{{placeholder}}` syntax and merge from the playbook plus runtime overrides.
+```
+Agent hygiene score: 92/100
+Repo: my-project
+Path: /home/user/my-project
+Good: 6 | Warning: 1 | Fix now: 0
 
-## Examples
+[warning] Docs directory is thin
+  Add a small docs/ tree or module notes so the repo is easier to navigate.
+[good] Agent instructions exist
+  Found repo-level instructions for agent onboarding.
+[good] An obvious entrypoint exists
+  Found a clear code entrypoint for navigation.
+[good] Changelog or release notes exist
+  The repo has a visible change log path for updates.
+[good] Commit style is consistent
+  14 of 14 recent commits follow Conventional Commits.
+[good] Package scripts are predictable
+  Found 4 of the expected build/test/lint/ci scripts.
+[good] README exists
+  The repo has a top-level README for quick orientation.
+```
 
-- `examples/demo.md` - sample playbook
+## CI integration
 
-## Documentation
+Add a hygiene gate to your pipeline:
 
-- [GitHub Pages site](https://oleg-koval.github.io/ai-refactor-playbook-runner/)
-- [Release notes](https://github.com/oleg-koval/ai-refactor-playbook-runner/releases)
-- [Issue tracker](https://github.com/oleg-koval/ai-refactor-playbook-runner/issues)
+```yaml
+- name: Hygiene check
+  run: npx agent-hygiene-linter . --min-score 75
+```
+
+Exit code `0` = score is at or above the threshold. Exit code `1` = below threshold.
+
+## Programmatic API
+
+```typescript
+import { scanRepository, renderTextReport } from "agent-hygiene-linter";
+
+const report = await scanRepository("/path/to/repo");
+console.log(renderTextReport(report));
+// report.score, report.findings, report.counts
+```
 
 ## System requirements
 
 - Node.js 20.10 or newer
-- A shell environment for the commands in your playbooks
-- Local network access if you want to open the UI from mobile over Tailscale
-
-## Security notes
-
-- Playbooks run shell commands. Review markdown before execution.
-- Use `--dry-run` first for new playbooks.
-- Keep commands scoped to the working directory you intend.
-
-## Support
-
-Support is best-effort and issue-driven. Read [SUPPORT.md](./SUPPORT.md) for the policy.
 
 ## Contributing
 
@@ -123,13 +129,13 @@ MIT. See [LICENSE](./LICENSE).
 
 ## Author
 
-Oleg Koval - [olegkoval.com](https://olegkoval.com)
+Oleg Koval — [olegkoval.com](https://olegkoval.com)
 
 ---
 
 <p align="center">
-  <a href="https://oleg-koval.github.io/ai-refactor-playbook-runner/">Website</a> ·
-  <a href="https://github.com/oleg-koval/ai-refactor-playbook-runner">GitHub</a> ·
-  <a href="https://github.com/oleg-koval/ai-refactor-playbook-runner/releases">Releases</a> ·
-  <a href="https://github.com/oleg-koval/ai-refactor-playbook-runner/issues">Issues</a>
+  <a href="https://oleg-koval.github.io/agent-hygiene-linter/">Website</a> ·
+  <a href="https://github.com/oleg-koval/agent-hygiene-linter">GitHub</a> ·
+  <a href="https://github.com/oleg-koval/agent-hygiene-linter/releases">Releases</a> ·
+  <a href="https://github.com/oleg-koval/agent-hygiene-linter/issues">Issues</a>
 </p>

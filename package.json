@@ -1,7 +1,7 @@
 {
-  "name": "ai-refactor-playbook-runner",
+  "name": "agent-hygiene-linter",
   "version": "1.1.0",
-  "description": "Markdown-driven AI refactor playbook runner with CLI and local web UI",
+  "description": "CLI linter that scores repo hygiene for agents and humans",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",
@@ -10,26 +10,26 @@
     "email": "oleg@bizcuit.nl",
     "url": "https://olegkoval.com"
   },
-  "homepage": "https://oleg-koval.github.io/ai-refactor-playbook-runner/",
+  "homepage": "https://oleg-koval.github.io/agent-hygiene-linter/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/oleg-koval/ai-refactor-playbook-runner.git"
+    "url": "https://github.com/oleg-koval/agent-hygiene-linter.git"
   },
   "bugs": {
-    "url": "https://github.com/oleg-koval/ai-refactor-playbook-runner/issues"
+    "url": "https://github.com/oleg-koval/agent-hygiene-linter/issues"
   },
   "keywords": [
-    "playbook",
-    "refactor",
-    "typescript",
+    "hygiene",
+    "lint",
+    "agents",
     "cli",
-    "markdown"
+    "typescript"
   ],
   "engines": {
     "node": ">=20.10.0"
   },
   "bin": {
-    "ai-refactor-playbook-runner": "./dist/cli.js"
+    "agent-hygiene-linter": "./dist/cli.js"
   },
   "exports": {
     ".": {
@@ -41,8 +41,7 @@
   "types": "./dist/index.d.ts",
   "files": [
     "dist",
-    "CHANGELOG.md",
-    "examples"
+    "CHANGELOG.md"
   ],
   "devDependencies": {
     "@eslint/js": "^9.26.0",
@@ -63,7 +62,7 @@
   },
   "scripts": {
     "build": "tsup",
-    "build:docs": "typedoc --out docs/api src/index.ts",
+    "lint:repo": "npm run build && node dist/cli.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src tests",
     "lint:fix": "eslint src tests --fix",
@@ -75,7 +74,6 @@
     "ci": "npm run typecheck && npm run lint && npm run test:coverage",
     "semantic-release": "semantic-release",
     "release:dry-run": "semantic-release --dry-run",
-    "docs:index": "docs-index-keeper update",
     "prepare": "lefthook install"
   }
 }
