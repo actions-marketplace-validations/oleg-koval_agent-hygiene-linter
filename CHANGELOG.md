@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/oleg-koval/agent-hygiene-linter/compare/v1.0.0...v1.0.1) (2026-06-21)
+
+
+### Bug Fixes
+
+* exit cleanly on EPIPE when stdout is closed early ([80d31e3](https://github.com/oleg-koval/agent-hygiene-linter/commit/80d31e32a807c0815fd9624fc7e8e7cbdf1e59be))
+
 # 1.0.0 (2026-06-21)
 
 
