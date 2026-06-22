@@ -1,0 +1,26 @@
+name: Update major tag
+
+# Keep a moving major tag (e.g. v1) pointed at the latest release so Marketplace
+# consumers and reusable workflows can pin `@v1` and never touch it again.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  move-major-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Move major tag to this release
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"   # e.g. v1.2.3
+          MAJOR="${TAG%%.*}"          # e.g. v1
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -f "$MAJOR" "$GITHUB_SHA"
+          git push -f origin "$MAJOR"
