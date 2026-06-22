@@ -6,21 +6,26 @@ on:
   release:
     types: [published]
 
-permissions:
-  contents: write
+permissions: {}
 
 jobs:
   move-major-tag:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # required to create/update the major tag ref via the API
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Move major tag to this release
+      - name: Point major tag at this release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
           set -euo pipefail
-          TAG="${GITHUB_REF_NAME}"   # e.g. v1.2.3
-          MAJOR="${TAG%%.*}"          # e.g. v1
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -f "$MAJOR" "$GITHUB_SHA"
-          git push -f origin "$MAJOR"
+          MAJOR="${REF_NAME%%.*}" # v1.2.3 -> v1
+          # No checkout/git push needed: update the ref directly through the API.
+          if gh api "repos/$REPO/git/refs/tags/$MAJOR" >/dev/null 2>&1; then
+            gh api -X PATCH "repos/$REPO/git/refs/tags/$MAJOR" -f sha="$SHA" -F force=true
+          else
+            gh api -X POST "repos/$REPO/git/refs" -f ref="refs/tags/$MAJOR" -f sha="$SHA"
+          fi

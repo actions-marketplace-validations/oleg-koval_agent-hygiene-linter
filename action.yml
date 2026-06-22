@@ -52,10 +52,13 @@ runs:
         set -euo pipefail
         FLAGS=(--min-score "$AHL_MIN" --format "$AHL_FORMAT")
         if [ "$AHL_FIX" = "true" ]; then FLAGS+=(--fix); fi
+        # Split extra args on whitespace without glob-expanding them (read does not glob).
+        read -ra EXTRA_ARGS <<<"$AHL_ARGS"
         # ponytail: run the published npm CLI via npx — no bundling, no Docker image.
         # Tradeoff: one npm fetch at runtime, and the runner must have Node (GitHub-hosted runners do).
+        # ${arr[@]+...} guard keeps an empty array safe under `set -u` on bash 3.2 (macOS runners).
         if [ -n "$AHL_OUT" ]; then
-          npx --yes "agent-hygiene-linter@${AHL_VERSION}" "$AHL_PATH" "${FLAGS[@]}" $AHL_ARGS | tee "$AHL_OUT"
+          npx --yes "agent-hygiene-linter@${AHL_VERSION}" "$AHL_PATH" "${FLAGS[@]}" ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"} | tee "$AHL_OUT"
         else
-          npx --yes "agent-hygiene-linter@${AHL_VERSION}" "$AHL_PATH" "${FLAGS[@]}" $AHL_ARGS
+          npx --yes "agent-hygiene-linter@${AHL_VERSION}" "$AHL_PATH" "${FLAGS[@]}" ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"}
         fi
